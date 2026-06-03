@@ -1,9 +1,35 @@
 let apiKeyInput;
-let situationInput;
-let submitButton;
-let resultDiv;
+let chatWindow;
+let messageInput;
+let sendButton;
+let resetButton;
 
-const MODEL_NAME = "gemini-3.5-flash";
+const MODEL_NAME = "gemini-2.0-flash";
+
+const SYSTEM_PROMPT = `
+너는 사용자의 편을 들어주는 친구 같은 AI야.
+
+사용자가 화났던 일, 짜증났던 일, 억울했던 일을 털어놓으면
+카카오톡 친구처럼 자연스럽게 답장해줘.
+
+말투 규칙:
+- 너무 상담사처럼 딱딱하게 말하지 말 것
+- 친구처럼 편하게 말할 것
+- 먼저 사용자의 감정을 인정하고 공감할 것
+- 그 다음 사용자를 대신해 살짝 과장되고 유머러스하게 화내줄 것
+- 너무 길게 설교하지 말 것
+- 한 번에 3~6문장 정도로 답할 것
+- 사용자가 이어서 말하면 이전 대화 맥락을 기억하고 자연스럽게 이어갈 것
+
+안전 규칙:
+- 욕설은 가능하면 순화해서 사용할 것
+- 폭력, 협박, 보복, 괴롭힘을 부추기지 말 것
+- 혐오표현은 하지 말 것
+- 상대방을 실제로 공격하라고 조언하지 말 것
+- 감정 해소용으로만 대신 화내줄 것
+`;
+
+let chats = [];
 
 function setup() {
   noCanvas();
@@ -11,37 +37,56 @@ function setup() {
   const app = select("#app");
 
   createElement("h1", "내 편 들어주는 AI").parent(app);
-  createP("화나는 일을 털어놓으면 AI가 공감해주고, 대신 화내줍니다.").parent(app);
+  createP("화나는 일을 카톡하듯이 보내면, AI가 친구처럼 공감하고 대신 화내줍니다.").parent(app);
 
-  // secret.js가 없을 때만 API Key 입력칸 표시
   if (typeof GEMINI_API_KEY === "undefined" || !GEMINI_API_KEY) {
-    createElement("label", "Gemini API Key").parent(app);
+    const keyBox = createDiv("");
+    keyBox.class("key-box");
+    keyBox.parent(app);
+
+    createElement("label", "Gemini API Key").parent(keyBox);
     apiKeyInput = createInput("", "password");
     apiKeyInput.attribute("placeholder", "API Key를 입력하세요");
-    apiKeyInput.parent(app);
+    apiKeyInput.parent(keyBox);
   }
 
-  createElement("label", "무슨 일이 있었나요?").parent(app);
-  situationInput = createElement("textarea");
-  situationInput.attribute("placeholder", "예: 친구가 약속에 늦었는데 사과도 대충 해서 너무 화났어.");
-  situationInput.parent(app);
+  const phone = createDiv("");
+  phone.id("phone");
+  phone.parent(app);
 
-  submitButton = createButton("내 편 들어줘");
-  submitButton.mousePressed(comfortMe);
-  submitButton.parent(app);
+  const phoneHeader = createDiv("내 편 들어주는 AI");
+  phoneHeader.id("phone-header");
+  phoneHeader.parent(phone);
 
-  resultDiv = createDiv(`
-    <div class="result-card empty">
-      <h2>공감 멘트</h2>
-      <p>여기에 AI의 공감이 나와요.</p>
-    </div>
-    <div class="result-card empty">
-      <h2>대신 화내기</h2>
-      <p>여기에 AI가 대신 화내줘요.</p>
-    </div>
-  `);
-  resultDiv.id("result");
-  resultDiv.parent(app);
+  chatWindow = createDiv("");
+  chatWindow.id("chat-window");
+  chatWindow.parent(phone);
+
+  addBotMessage("무슨 일 있었어? 여기다 그냥 털어놔. 내가 일단 네 편 들어줄게.");
+
+  const inputArea = createDiv("");
+  inputArea.id("input-area");
+  inputArea.parent(phone);
+
+  messageInput = createElement("textarea");
+  messageInput.attribute("placeholder", "화났던 일을 입력해봐...");
+  messageInput.parent(inputArea);
+
+  sendButton = createButton("보내기");
+  sendButton.mousePressed(sendMessage);
+  sendButton.parent(inputArea);
+
+  resetButton = createButton("대화 초기화");
+  resetButton.id("reset-button");
+  resetButton.mousePressed(resetChat);
+  resetButton.parent(app);
+
+  messageInput.elt.addEventListener("keydown", function (event) {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      sendMessage();
+    }
+  });
 }
 
 function getApiKey() {
@@ -56,70 +101,39 @@ function getApiKey() {
   return "";
 }
 
-async function comfortMe() {
+async function sendMessage() {
   const apiKey = getApiKey();
-  const situation = situationInput.value().trim();
+  const userText = messageInput.value().trim();
 
   if (!apiKey) {
-    resultDiv.html(`<p class="notice">Gemini API Key를 먼저 입력해주세요.</p>`);
+    addBotMessage("API Key를 먼저 입력해줘!");
     return;
   }
 
-  if (!situation) {
-    resultDiv.html(`<p class="notice">화났던 상황을 먼저 입력해주세요.</p>`);
+  if (!userText) {
     return;
   }
 
-  submitButton.attribute("disabled", "");
-  submitButton.html("AI가 내 편 드는 중...");
+  addUserMessage(userText);
+  messageInput.value("");
 
-  resultDiv.html(`
-    <div class="loading-box">
-      <div class="loader"></div>
-      <p>상황을 읽고 있어요...</p>
-    </div>
-  `);
+  chats.push({
+    role: "user",
+    parts: [{ text: userText }]
+  });
 
-  const prompt = `
-너는 사용자의 편을 들어주는 친구 같은 AI야.
-사용자가 화났던 일을 털어놓으면, 먼저 감정을 진심으로 인정하고 공감해줘.
-그 다음에는 사용자를 대신해서 유머러스하고 속 시원하게 화내줘.
-
-사용자가 털어놓은 상황:
-${situation}
-
-응답 규칙:
-1. 사용자의 감정을 먼저 인정해줘.
-2. 공감 멘트는 따뜻하고 친구 같은 말투로 써줘.
-3. 대신 화내는 멘트는 속 시원하지만 너무 공격적이지 않게 써줘.
-4. 욕설, 혐오표현, 폭력, 협박, 실제 보복을 부추기는 말은 하지 마.
-5. 조언은 길게 하지 말고, 이번 프로젝트에서는 공감과 대신 화내기에 집중해.
-6. 반드시 JSON 형식으로만 답해줘.
-`;
+  showTyping();
+  sendButton.attribute("disabled", "");
+  sendButton.html("답장 중...");
 
   const requestBody = {
-    contents: [
-      {
-        role: "user",
-        parts: [{ text: prompt }]
-      }
-    ],
+    systemInstruction: {
+      parts: [{ text: SYSTEM_PROMPT }]
+    },
+    contents: chats,
     generationConfig: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: "object",
-        properties: {
-          empathy: {
-            type: "string",
-            description: "사용자의 감정을 인정하고 공감하는 멘트"
-          },
-          anger: {
-            type: "string",
-            description: "사용자를 대신해 유머러스하고 안전하게 화내주는 멘트"
-          }
-        },
-        required: ["empathy", "anger"]
-      }
+      temperature: 0.9,
+      maxOutputTokens: 500
     }
   };
 
@@ -136,38 +150,85 @@ ${situation}
       }
     );
 
+    removeTyping();
+
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(errorText);
     }
 
     const data = await response.json();
-    const text = data.candidates[0].content.parts[0].text;
-    const parsed = JSON.parse(text);
 
-    showResult(parsed);
+    let botText = data.candidates[0].content.parts[0].text;
+
+    chats.push({
+      role: "model",
+      parts: [{ text: botText }]
+    });
+
+    addBotMessage(botText);
   } catch (error) {
+    removeTyping();
     console.error(error);
-    resultDiv.html(`
-      <p class="notice">오류가 발생했습니다.</p>
-      <p class="error-message">${error.message}</p>
-    `);
+    addBotMessage("앗 오류가 났어. API Key나 모델명을 한 번 확인해봐!");
   } finally {
-    submitButton.removeAttribute("disabled");
-    submitButton.html("내 편 들어줘");
+    sendButton.removeAttribute("disabled");
+    sendButton.html("보내기");
   }
 }
 
-function showResult(data) {
-  resultDiv.html(`
-    <div class="result-card empathy-card">
-      <h2>공감 멘트</h2>
-      <p>${data.empathy}</p>
-    </div>
+function addUserMessage(text) {
+  const bubble = createDiv(formatMessage(text));
+  bubble.class("message user-message");
+  bubble.parent(chatWindow);
+  scrollToBottom();
+}
 
-    <div class="result-card anger-card">
-      <h2>대신 화내기</h2>
-      <p>${data.anger}</p>
-    </div>
+function addBotMessage(text) {
+  const bubble = createDiv(formatMessage(text));
+  bubble.class("message bot-message");
+  bubble.parent(chatWindow);
+  scrollToBottom();
+}
+
+function showTyping() {
+  const typing = createDiv(`
+    <span></span>
+    <span></span>
+    <span></span>
   `);
+  typing.id("typing");
+  typing.class("message bot-message typing");
+  typing.parent(chatWindow);
+  scrollToBottom();
+}
+
+function removeTyping() {
+  const typing = select("#typing");
+  if (typing) {
+    typing.remove();
+  }
+}
+
+function resetChat() {
+  chats = [];
+  chatWindow.html("");
+  addBotMessage("대화 초기화했어. 다시 말해봐. 무슨 일 있었어?");
+}
+
+function scrollToBottom() {
+  chatWindow.elt.scrollTop = chatWindow.elt.scrollHeight;
+}
+
+function formatMessage(text) {
+  return escapeHTML(text).replace(/\n/g, "<br>");
+}
+
+function escapeHTML(text) {
+  return text
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }

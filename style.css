@@ -1,63 +1,130 @@
 body {
   font-family: Arial, sans-serif;
-  background: #fff4ef;
+  background: #f4f1ec;
   color: #222;
   margin: 0;
   padding: 0;
 }
 
 #app {
-  max-width: 680px;
-  margin: 40px auto;
-  padding: 30px;
-  background: white;
-  border-radius: 24px;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.08);
+  max-width: 520px;
+  margin: 30px auto;
+  padding: 24px;
 }
 
 h1 {
   margin-bottom: 8px;
-  font-size: 32px;
+  font-size: 30px;
 }
 
 p {
-  line-height: 1.6;
+  line-height: 1.5;
+}
+
+.key-box {
+  background: white;
+  padding: 16px;
+  border-radius: 18px;
+  margin-bottom: 18px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
 }
 
 label {
   display: block;
-  margin-top: 24px;
   margin-bottom: 8px;
   font-weight: bold;
 }
 
-input,
-textarea {
+input {
   width: 100%;
-  padding: 14px;
+  padding: 12px;
   border: 1px solid #ccc;
-  border-radius: 14px;
+  border-radius: 12px;
   box-sizing: border-box;
+  font-size: 14px;
+}
+
+#phone {
+  height: 680px;
+  background: #bacee0;
+  border-radius: 28px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.16);
+  border: 3px solid #222;
+}
+
+#phone-header {
+  height: 58px;
+  background: #9bb8d1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+#chat-window {
+  flex: 1;
+  padding: 18px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.message {
+  max-width: 76%;
+  padding: 12px 14px;
+  border-radius: 18px;
   font-size: 15px;
-  font-family: Arial, sans-serif;
+  line-height: 1.5;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+.user-message {
+  align-self: flex-end;
+  background: #ffe55c;
+  border-bottom-right-radius: 4px;
+}
+
+.bot-message {
+  align-self: flex-start;
+  background: white;
+  border-bottom-left-radius: 4px;
+}
+
+#input-area {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  background: #f8f8f8;
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
 }
 
 textarea {
-  min-height: 160px;
-  resize: vertical;
+  flex: 1;
+  height: 46px;
+  max-height: 110px;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 18px;
+  resize: none;
+  font-size: 14px;
+  font-family: Arial, sans-serif;
+  box-sizing: border-box;
 }
 
 button {
-  margin-top: 22px;
-  width: 100%;
-  padding: 15px;
   border: none;
-  border-radius: 16px;
+  border-radius: 18px;
   background: #222;
   color: white;
-  font-size: 17px;
   font-weight: bold;
   cursor: pointer;
+  padding: 0 16px;
 }
 
 button:hover {
@@ -69,73 +136,49 @@ button:disabled {
   cursor: not-allowed;
 }
 
-#result {
-  margin-top: 30px;
+#reset-button {
+  width: 100%;
+  margin-top: 14px;
+  padding: 13px;
+  border-radius: 16px;
 }
 
-.result-card {
-  padding: 22px;
-  border-radius: 20px;
-  margin-bottom: 18px;
-  border: 2px solid #222;
+.typing {
+  display: flex;
+  gap: 4px;
+  width: fit-content;
 }
 
-.result-card h2 {
-  margin-top: 0;
-  margin-bottom: 10px;
-  font-size: 21px;
-}
-
-.result-card p {
-  margin-bottom: 0;
-  font-size: 16px;
-}
-
-.empty {
-  background: #f7f7f7;
-  color: #777;
-  border-color: #ddd;
-}
-
-.empathy-card {
-  background: #fff7dc;
-}
-
-.anger-card {
-  background: #ffe2dc;
-}
-
-.notice {
-  padding: 18px;
-  border-radius: 14px;
-  background: #f7f7f7;
-}
-
-.error-message {
-  font-size: 12px;
-  color: #777;
-  word-break: break-all;
-}
-
-.loading-box {
-  text-align: center;
-  padding: 30px;
-  border-radius: 18px;
-  background: #f7f7f7;
-}
-
-.loader {
-  width: 34px;
-  height: 34px;
-  margin: 0 auto 14px;
-  border: 4px solid #ddd;
-  border-top: 4px solid #222;
+.typing span {
+  width: 7px;
+  height: 7px;
+  background: #999;
   border-radius: 50%;
-  animation: spin 1s linear infinite;
+  display: inline-block;
+  animation: blink 1.2s infinite;
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
+.typing span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes blink {
+  0% {
+    opacity: 0.2;
+    transform: translateY(0);
+  }
+
+  50% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+
+  100% {
+    opacity: 0.2;
+    transform: translateY(0);
   }
 }
