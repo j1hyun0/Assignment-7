@@ -1,76 +1,17 @@
 <!DOCTYPE html>
 <html lang="ko">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>냥냥 연애운 상담소</title>
+    <title>냥냥 연애운 상담소</title>
 
-  <link rel="stylesheet" href="style.css?v=4" />
-  <script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.min.js"></script>
-</head>
+    <link rel="stylesheet" href="style.css?v=10" />
 
-<body>
-  <main id="app">
-    <section class="container">
-      <header class="header">
-        <p class="badge">AI Love Fortune</p>
-        <h1>냥냥 연애운 상담소</h1>
-        <p class="subtitle">
-          생년월일을 알려주면 고양이 점술사 먀로가 오늘의 연애운을 봐준다냥 🐾
-        </p>
-      </header>
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.min.js"></script>
+  </head>
 
-      <section class="card">
-        <div id="sketch-holder"></div>
-
-        <div class="input-area">
-          <label for="api-key-input">Gemini API Key</label>
-          <input
-            id="api-key-input"
-            type="password"
-            placeholder="API Key를 입력해줘"
-            autocomplete="off"
-          />
-
-          <label for="birth-input">생년월일</label>
-          <input
-            id="birth-input"
-            type="date"
-          />
-
-          <button id="fortune-button">
-            연애운 보러가기
-          </button>
-        </div>
-
-        <div id="result-card" class="result-card hidden">
-          <h2 id="score-line">오늘의 연애운은 ?점이다냥!</h2>
-          <h3 id="fortune-title"></h3>
-
-          <p id="fortune-explanation"></p>
-
-          <div class="result-row">
-            <strong>오늘의 조언</strong>
-            <span id="fortune-advice"></span>
-          </div>
-
-          <div class="result-row">
-            <strong>행운의 아이템</strong>
-            <span id="fortune-item"></span>
-          </div>
-
-          <p id="cat-reaction" class="cat-reaction"></p>
-        </div>
-      </section>
-
-      <footer class="footer">
-        API Key는 GitHub에 저장되지 않고, 브라우저에서만 입력해서 사용해요.
-      </footer>
-    </section>
-  </main>
-
-  <script src="secret.js"></script>
-  <script src="sketch.js?v=4"></script>
-</body>
-</html>3
+  <body>
+    <script src="sketch.js?v=10"></script>
+  </body>
+</html>
