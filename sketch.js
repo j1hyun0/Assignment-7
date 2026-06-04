@@ -62,8 +62,8 @@ function setup() {
   const birthInput = document.querySelector("#birth-input");
   const button = document.querySelector("#fortune-button");
 
-  if (window.GEMINI_API_KEY) {
-    keyInput.value = window.GEMINI_API_KEY;
+  if (window.API_KEY) {
+    keyInput.value = window.API_KEY;
   }
 
   button.addEventListener("click", async () => {
@@ -71,7 +71,7 @@ function setup() {
     const birthDate = birthInput.value;
 
     if (!apiKey) {
-      showError("Gemini API Key를 입력해줘!");
+      showError("API Key를 입력해줘!");
       return;
     }
 
